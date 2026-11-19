@@ -4,10 +4,17 @@
 //   1. 주소가 바뀌어도 이 파일만 고치면 돼요.
 //   2. 컴포넌트 코드가 "무엇을 하는지"만 남아서 읽기 쉬워져요.
 //
-// 주소 앞에 http://localhost:8080 을 안 붙여도 되는 이유:
-//   vite.config.js 의 프록시가 /api 로 시작하는 요청을 8080 으로 전달해주기 때문이에요.
+// 서버 주소는 환경 변수 VITE_API_BASE_URL 로 정해요.
+//   - 로컬 개발(npm run dev): 비워두면 '/api/...' 로 요청 → vite.config.js 프록시가 8080 으로 전달
+//   - 배포(Cloudflare Pages): 대시보드에서 VITE_API_BASE_URL=https://백엔드주소 로 설정
+//
+// import.meta.env: Vite 가 빌드할 때 환경 변수를 코드에 끼워 넣어줘요.
+//   VITE_ 로 시작하는 변수만 프론트 코드에서 읽을 수 있어요. (비밀번호 같은 건 절대 넣으면 안 돼요!
+//   빌드 결과물에 그대로 들어가서 누구나 볼 수 있거든요)
 
-const BASE_URL = '/api/diaries';
+// 끝에 / 를 붙여 적어도 괜찮도록 제거 (https://a.com/ → https://a.com)
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const BASE_URL = `${API_BASE_URL}/api/diaries`;
 
 // 공통 요청 함수: fetch + 에러 확인 + JSON 변환을 한 번에
 async function request(url, options) {
