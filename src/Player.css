@@ -1,0 +1,536 @@
+/* ==========================================================
+   MOODBOX — 실버 톤 Y2K 휴대용 음악 플레이어 스타일
+   ========================================================== */
+
+/* 자주 쓰는 색은 변수로 모아두면 나중에 바꾸기 쉬워요 */
+:root {
+  --lcd-bg: #a9dcf2; /* 하늘색 LCD */
+  --lcd-ink: #123a52; /* LCD 글자색 (진한 남색) */
+  --silver-dark: #8d949e;
+  --silver-text: #5d636d;
+}
+
+/* ---------- 페이지 배경 ---------- */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 16px;
+  font-family: 'DotGothic16', monospace;
+  background:
+    radial-gradient(circle at 15% 20%, #dff0ff, transparent 45%),
+    radial-gradient(circle at 85% 80%, #f3e3ff, transparent 45%),
+    #eceff4;
+}
+
+.help {
+  margin: 0;
+  font-size: 12px;
+  color: #7a8090;
+  text-align: center;
+}
+
+/* ---------- 기기 몸체 ---------- */
+.player {
+  width: 300px;
+  padding: 22px 22px 30px;
+  border-radius: 48px;
+  border: 1px solid #9aa1ab;
+  /* 크롬 실버 느낌: 밝은색-어두운색을 번갈아 섞은 대각선 그라데이션 */
+  background: linear-gradient(145deg, #fdfdfd 0%, #d9dde3 25%, #b8bec8 50%, #eceff2 70%, #a9b0ba 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.9), /* 위쪽 하이라이트 */
+    inset 0 -3px 6px rgba(0, 0, 0, 0.18), /* 아래쪽 음영 */
+    0 20px 40px rgba(60, 70, 90, 0.35); /* 바닥 그림자 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.player button {
+  font-family: inherit;
+}
+
+.player-top {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.brand {
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: #6d7480;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); /* 음각 느낌 */
+}
+
+/* 전원 LED */
+.led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7dffb0;
+  box-shadow: 0 0 6px #3dff8a;
+}
+
+/* ---------- LCD 화면 ---------- */
+.screen {
+  position: relative;
+  width: 100%;
+  height: 230px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 6px solid #5d636d;
+  background: var(--lcd-bg);
+  color: var(--lcd-ink);
+  box-shadow: inset 0 0 12px rgba(0, 40, 70, 0.35);
+}
+
+/* 화면 위에 얇은 가로 줄무늬 덮기 (옛날 LCD 느낌) */
+.screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* 줄무늬가 클릭을 가로채지 않게 */
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 3px);
+}
+
+.screen-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  background: var(--lcd-ink);
+  color: var(--lcd-bg);
+}
+
+.battery {
+  position: relative;
+  width: 18px;
+  height: 9px;
+  padding: 1px;
+  border: 1px solid currentColor;
+}
+
+.battery span {
+  display: block;
+  width: 70%;
+  height: 100%;
+  background: currentColor;
+}
+
+.battery::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 2px;
+  width: 2px;
+  height: 3px;
+  background: currentColor;
+}
+
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  font-size: 13px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lcd-ink) transparent;
+}
+
+/* ---------- 메뉴 & 목록 ---------- */
+.menu-list,
+.diary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.menu-item .arrow {
+  visibility: hidden;
+}
+
+/* 선택된 항목은 색을 반전시켜서 표시 */
+.menu-item.selected,
+.diary-item.selected {
+  background: var(--lcd-ink);
+  color: var(--lcd-bg);
+}
+
+.menu-item.selected .arrow {
+  visibility: visible;
+}
+
+.diary-item {
+  display: grid;
+  grid-template-columns: 38px 1fr 14px; /* 날짜 | 제목 | 기분 아이콘 */
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.diary-date {
+  opacity: 0.7;
+}
+
+.diary-song {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis; /* 길면 ... 처리 */
+}
+
+.diary-song small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.empty,
+.coming-soon {
+  margin-top: 40px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.coming-soon p {
+  margin: 0;
+}
+
+.blink {
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Now Playing ---------- */
+.now-playing {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.np-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.np-date {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.np-title-box {
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 18px;
+}
+
+.np-title {
+  display: inline-block;
+}
+
+/* 전광판처럼 오른쪽 → 왼쪽으로 흘러가기 */
+.np-title.marquee {
+  padding-left: 100%;
+  animation: marquee 8s linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.np-artist {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.equalizer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 3px;
+  height: 20px;
+  margin: 2px 0;
+}
+
+.eq-bar {
+  width: 5px;
+  height: 100%;
+  background: var(--lcd-ink);
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes eq {
+  from {
+    transform: scaleY(0.2);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.np-mood {
+  font-size: 12px;
+}
+
+.np-memo {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: keep-all; /* 한글 단어 중간에서 줄바꿈 안 되게 */
+}
+
+.np-progress {
+  height: 6px;
+  margin-top: auto; /* 맨 아래로 밀기 */
+  border: 1px solid var(--lcd-ink);
+}
+
+.np-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--lcd-ink);
+  animation: progress 30s linear infinite;
+}
+
+@keyframes progress {
+  to {
+    width: 100%;
+  }
+}
+
+/* 일시정지 상태면 모든 애니메이션 멈춤 */
+.now-playing.paused .np-title,
+.now-playing.paused .eq-bar,
+.now-playing.paused .np-progress span {
+  animation-play-state: paused;
+}
+
+/* ---------- 기록하기 폼 ---------- */
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.form-date {
+  text-align: center;
+  opacity: 0.75;
+}
+
+.diary-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.diary-form input {
+  padding: 3px 5px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--lcd-ink);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--lcd-ink);
+  border-radius: 2px;
+  outline: none;
+}
+
+.diary-form input:focus {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.diary-form input::placeholder {
+  color: rgba(18, 58, 82, 0.45);
+}
+
+.mood-picker {
+  display: flex;
+  gap: 3px;
+}
+
+.mood-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 13px;
+  color: var(--lcd-ink);
+  background: transparent;
+  border: 1px solid var(--lcd-ink);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.mood-btn small {
+  font-size: 9px;
+}
+
+.mood-btn.selected {
+  background: var(--lcd-ink);
+  color: var(--lcd-bg);
+}
+
+.form-error {
+  margin: 0;
+  color: #b3261e;
+  text-align: center;
+}
+
+.form-submit {
+  padding: 4px;
+  font-size: 12px;
+  color: var(--lcd-bg);
+  background: var(--lcd-ink);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* ---------- 홀로그램 스티커 ---------- */
+.holo-sticker {
+  width: 100%;
+  padding: 5px 0;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #4b4f63;
+  /* 무지갯빛 그라데이션을 3배 크기로 깔고, 위치를 옮겨서 반짝이는 느낌 */
+  background: linear-gradient(110deg, #ffd6f5, #d6e9ff, #d6fff1, #fff6c7, #f0d6ff, #ffd6f5);
+  background-size: 300% 100%;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+  animation: holo 6s linear infinite;
+}
+
+@keyframes holo {
+  to {
+    background-position: 150% 0;
+  }
+}
+
+/* ---------- 조작부 ---------- */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+/* 3x3 격자에 버튼을 십자 모양으로 배치 */
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+}
+
+.dpad-btn,
+.pill-btn {
+  color: var(--silver-text);
+  background: linear-gradient(180deg, #f6f7f9, #bfc4cc);
+  border: 1px solid var(--silver-dark);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 2px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.dpad-btn {
+  font-size: 12px;
+}
+
+.up {
+  grid-column: 2;
+  grid-row: 1;
+  border-radius: 10px 10px 0 0;
+}
+
+.left {
+  grid-column: 1;
+  grid-row: 2;
+  border-radius: 10px 0 0 10px;
+}
+
+.right {
+  grid-column: 3;
+  grid-row: 2;
+  border-radius: 0 10px 10px 0;
+}
+
+.down {
+  grid-column: 2;
+  grid-row: 3;
+  border-radius: 0 0 10px 10px;
+}
+
+.ok-btn {
+  grid-column: 2;
+  grid-row: 2;
+  margin: 3px;
+  border-radius: 50%;
+  font-size: 12px;
+  color: #4b4f63;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #c9ced6 60%, #9aa1ab);
+  border: 1px solid var(--silver-dark);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.pill-row {
+  display: flex;
+  gap: 24px;
+}
+
+.pill-btn {
+  width: 74px;
+  padding: 6px 0;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+/* 누르는 순간 살짝 들어가는 느낌 */
+.dpad-btn:active,
+.ok-btn:active,
+.pill-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.player button:focus-visible {
+  outline: 2px solid #4aa8d8;
+  outline-offset: 2px;
+}

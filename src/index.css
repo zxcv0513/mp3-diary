@@ -1,0 +1,10 @@
+/* 전체 공통 기본 스타일 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* padding/border 를 포함해서 크기 계산 */
+}
+
+body {
+  margin: 0;
+}
