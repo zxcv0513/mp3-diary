@@ -417,6 +417,11 @@
   cursor: pointer;
 }
 
+.form-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 /* ---------- 홀로그램 스티커 ---------- */
 .holo-sticker {
   width: 100%;

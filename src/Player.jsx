@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './Player.css';
-import { fakeDiaries } from './data/fakeDiaries';
+import { createDiary, fetchDiaries } from './api/diaryApi';
 import { getToday } from './utils/date';
 import Screen from './components/Screen';
 import { MENU_ITEMS } from './data/menuItems';
@@ -25,12 +25,37 @@ export default function Player() {
   // ===== 상태(state) =====
   const [currentScreen, setCurrentScreen] = useState('menu'); // 지금 보여줄 화면
   const [selectedIndex, setSelectedIndex] = useState(0); // 메뉴/목록에서 선택된 위치
-  const [diaries, setDiaries] = useState(fakeDiaries); // 기록 목록 (지금은 가짜 데이터)
+  const [diaries, setDiaries] = useState([]); // 기록 목록 (서버에서 받아와요)
   const [selectedDiary, setSelectedDiary] = useState(null); // 상세 화면에 보여줄 기록
   const [isPlaying, setIsPlaying] = useState(true); // Now Playing 재생/일시정지
+  const [isLoading, setIsLoading] = useState(true); // 서버에서 목록을 불러오는 중인지
+  const [loadError, setLoadError] = useState(null); // 목록 불러오기 실패 메시지
 
   // 기기의 OK 버튼으로 DiaryForm 을 제출하기 위한 연결 고리
   const formRef = useRef(null);
+
+  // ===== 서버에서 목록 불러오기 =====
+  // .then / .catch / .finally 안의 함수는 "응답이 도착한 뒤에" 실행돼요.
+  function requestDiaries() {
+    fetchDiaries() // GET /api/diaries
+      .then((data) => setDiaries(data)) // 성공
+      .catch(() => setLoadError('서버에 연결할 수 없어요')) // 실패
+      .finally(() => setIsLoading(false)); // 성공하든 실패하든 로딩은 끝!
+  }
+
+  // 다시 시도: 로딩 상태로 되돌린 뒤 다시 요청
+  function loadDiaries() {
+    setIsLoading(true);
+    setLoadError(null);
+    requestDiaries();
+  }
+
+  // 처음 화면이 뜰 때 딱 한 번 실행 (의존성 배열이 [] 라서)
+  // isLoading 의 처음 값이 이미 true 라서 여기서는 바로 요청만 보내요.
+  // ※ 개발 모드(StrictMode)에서는 확인용으로 두 번 실행될 수 있어요. 조회라서 괜찮아요.
+  useEffect(() => {
+    requestDiaries();
+  }, []);
 
   // 최신순 정렬 (날짜가 같으면 나중에 쓴 것(id가 큰 것)이 위로)
   // 원본 배열을 건드리지 않도록 [...diaries] 로 복사한 뒤 정렬해요.
@@ -99,6 +124,7 @@ export default function Player() {
 
   function handleOk() {
     if (currentScreen === 'menu') openMenuItem(selectedIndex);
+    else if (currentScreen === 'list' && loadError) loadDiaries(); // 실패 화면에서 OK → 다시 시도
     else if (currentScreen === 'list') openDiary(selectedIndex);
     else if (currentScreen === 'write') formRef.current?.requestSubmit(); // 폼 제출
     else if (currentScreen === 'detail') setIsPlaying((playing) => !playing);
@@ -118,14 +144,15 @@ export default function Player() {
     goTo('menu');
   }
 
-  // 새 기록 저장
-  function handleSave(form) {
-    const newDiary = {
-      id: Date.now(), // 임시 id (나중엔 DB가 자동으로 만들어줘요)
+  // 새 기록 저장 → 서버로 보내기
+  // async 함수라서 DiaryForm 이 await 로 결과를 기다릴 수 있어요.
+  // 실패하면 에러가 DiaryForm 까지 전달돼서 폼 안에 메시지를 보여줘요.
+  async function handleSave(form) {
+    // POST /api/diaries → 서버가 id, createdAt 을 채워서 돌려줘요
+    const newDiary = await createDiary({
       date: getToday(),
       ...form, // songTitle, artist, mood, memo
-      createdAt: new Date().toISOString(),
-    };
+    });
     setDiaries((prev) => [...prev, newDiary]);
     // 저장하면 바로 Now Playing 화면으로!
     setSelectedDiary(newDiary);
@@ -187,6 +214,16 @@ export default function Player() {
       case 'write':
         return <DiaryForm formRef={formRef} onSave={handleSave} />;
       case 'list':
+        if (isLoading) return <p className="empty blink">불러오는 중...</p>;
+        if (loadError) {
+          return (
+            <p className="empty">
+              {loadError}
+              <br />
+              OK 를 눌러 다시 시도
+            </p>
+          );
+        }
         return (
           <DiaryList diaries={sortedDiaries} selectedIndex={selectedIndex} onSelect={openDiary} />
         );

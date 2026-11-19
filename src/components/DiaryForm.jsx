@@ -12,21 +12,33 @@ export default function DiaryForm({ formRef, onSave }) {
   const [mood, setMood] = useState('HAPPY');
   const [memo, setMemo] = useState('');
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false); // 서버에 저장하는 중인지
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault(); // 폼 제출 시 페이지가 새로고침되는 기본 동작 막기
+
+    if (isSaving) return; // 저장 중에 또 누르면 두 번 저장되니까 무시
 
     if (!songTitle.trim() || !artist.trim()) {
       setError('노래 제목과 아티스트를 입력해주세요');
       return;
     }
 
-    onSave({
-      songTitle: songTitle.trim(),
-      artist: artist.trim(),
-      mood,
-      memo: memo.trim(),
-    });
+    setIsSaving(true);
+    setError('');
+    try {
+      // onSave(= Player 의 handleSave)가 서버 저장을 끝낼 때까지 기다려요.
+      // 성공하면 Player 가 Now Playing 화면으로 넘겨줘요.
+      await onSave({
+        songTitle: songTitle.trim(),
+        artist: artist.trim(),
+        mood,
+        memo: memo.trim(),
+      });
+    } catch {
+      setError('저장에 실패했어요. 서버를 확인해주세요');
+      setIsSaving(false); // 실패했을 때만 다시 누를 수 있게 풀어줘요
+    }
   }
 
   return (
@@ -82,8 +94,8 @@ export default function DiaryForm({ formRef, onSave }) {
 
       {error && <p className="form-error">{error}</p>}
 
-      <button type="submit" className="form-submit">
-        [ 저장하기 ]
+      <button type="submit" className="form-submit" disabled={isSaving}>
+        {isSaving ? '저장 중...' : '[ 저장하기 ]'}
       </button>
     </form>
   );
